@@ -1,9 +1,4 @@
-# terraform.tfvars
-
-# AWS settings
-aws_region = "us-east-1"  # Change to your preferred region
-
-# General configuration
+aws_region = "us-east-1" 
 name_prefix = "ec2-scheduler"
 
 # Tags to add to all resources

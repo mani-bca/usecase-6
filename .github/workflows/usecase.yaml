@@ -1,0 +1,134 @@
+name: Terraform cron
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # paths:
+    #   - 'infra/**'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: '1.10.1'
+  TF_VAR_environment: 'dev'
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  infra-provision:
+    name: Infra Provision
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'infra'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # - name: Generate terraform docs
+      #   uses: terraform-docs/gh-actions@main
+      #   with:          
+      #     working-dir: ./infra
+      #     git-push: true
+      #     output-file: README.md
+      #     output-method: inject
+      #     config-file: disabled
+      #     atlantis-file: disabled
+      #     find-dir: disabled
+      #     recursive: false
+      #     recursive-path: modules
+      #     output-format: markdown table
+      #     output-template: <!-- BEGIN_TF_DOCS -->\n{{ .Content }}\n<!-- END_TF_DOCS -->"
+      #     indention: 2
+      #     git-commit-message: terraform-docs:automated action
+      #     git-push-sign-off: false
+      #     fail-on-diff: false
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # - name: Terraform Init
+      #   run: terraform init
+
+      # - name: Terraform test
+      #   run: terraform test
+      #   continue-on-error: true
+
+      # - name: Terraform Format
+      #   id: fmt
+      #   run: terraform fmt -recursive
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      # - name: Install Checkov
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install checkov
+
+      # - name: Run Checkov Static Analysis
+      #   run: |
+      #     checkov -d . --soft-fail
+
+      # - name: Install tflint
+      #   run: |
+      #     curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      # - name: Run tflint
+      #   run: |
+      #     tflint --init
+      #     tflint
+      #   continue-on-error: true
+
+      - name: Terraform Plan
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.action == 'plan' }}
+        id: plan
+        run: |
+          export TF_LOG=DEBUG
+          export TF_LOG_PATH=$(pwd)/log.txt
+          terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' }}
+        run: |
+          export TF_LOG=DEBUG
+          export TF_LOG_PATH=$(pwd)/log.txt
+          terraform apply -auto-approve
+
+      - name: Terraform Destroy
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
+        run: |
+          export TF_LOG=DEBUG
+          export TF_LOG_PATH=$(pwd)/log.txt
+          terraform destroy -auto-approve
+
+      # - name: Upload Terraform Logs
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: terraform-logs-dev
+      #     path: infra/log.txt
+      #     retention-days: 30

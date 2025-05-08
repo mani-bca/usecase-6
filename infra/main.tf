@@ -1,11 +1,5 @@
-# main.tf
-
-provider "aws" {
-  region = var.aws_region
-}
-
 module "iam" {
-  source = "./modules/iam"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/iam?ref=main"
 
   name_prefix = var.name_prefix
   lambda_roles = {
@@ -24,7 +18,7 @@ module "iam" {
 
 # Create the EventBridge schedules first with dummy ARNs
 module "eventbridge" {
-  source = "./modules/eventbridge"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/eventbridge?ref=main"
 
   name_prefix        = var.name_prefix
   schedule_group_name = var.schedule_group_name
@@ -46,7 +40,7 @@ module "eventbridge" {
 }
 
 module "lambda" {
-  source = "./modules/lambda"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/iam?ref=main"
 
   name_prefix = var.name_prefix
   lambda_functions = {
@@ -76,5 +70,25 @@ module "lambda" {
   log_retention_in_days = var.log_retention_in_days
   tags                 = var.tags
 }
+
+# module "web_server" {
+#   source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/ec2?ref=main"
+  
+#   name_prefix                = "${var.project_name}-web-server-1"
+#   ami_id                     = var.web_server_ami
+#   instance_type              = var.web_server_instance_type
+#   subnet_id                  = module.vpc.public_subnet_ids[0]
+#   security_group_ids         = [module.web_server_sg.security_group_id]
+#   key_name                   = var.ssh_key_name
+#   associate_public_ip_address = true
+#   user_data_script          = "${path.root}/scripts/ecom.sh"
+  
+#   root_volume_type           = var.root_volume_type
+#   root_volume_size           = var.root_volume_size
+#   iam_instance_profile       = var.iam_instance_profile
+  
+#   tags = var.tags
+# }
+
 
 data "aws_caller_identity" "current" {}
