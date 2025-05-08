@@ -57,4 +57,55 @@ variable "lambda_memory_size" {
 }
 
 variable "lambda_subnet_ids" {
-  description = "List of subnet
+  description = "List of subnet IDs for the Lambda function"
+  type        = list(string)
+  default     = []
+}
+
+variable "lambda_security_group_ids" {
+  description = "List of security group IDs for the Lambda function"
+  type        = list(string)
+  default     = []
+}
+
+variable "common_environment_variables" {
+  description = "Environment variables for all Lambda functions"
+  type        = map(string)
+  default     = {}
+}
+
+variable "start_lambda_environment_variables" {
+  description = "Environment variables for the start Lambda function"
+  type        = map(string)
+  default     = {
+    TAG_KEY   = "AutoStart"
+    TAG_VALUE = "true"
+  }
+}
+
+variable "stop_lambda_environment_variables" {
+  description = "Environment variables for the stop Lambda function"
+  type        = map(string)
+  default     = {
+    TAG_KEY   = "AutoStop"
+    TAG_VALUE = "true"
+  }
+}
+
+variable "start_lambda_additional_policies" {
+  description = "List of additional policy ARNs to attach to the start Lambda role"
+  type        = list(string)
+  default     = []
+}
+
+variable "stop_lambda_additional_policies" {
+  description = "List of additional policy ARNs to attach to the stop Lambda role"
+  type        = list(string)
+  default     = []
+}
+
+variable "log_retention_in_days" {
+  description = "CloudWatch log retention in days"
+  type        = number
+  default     = 14
+}
