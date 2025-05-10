@@ -57,7 +57,7 @@ module "lambda_start" {
   project_name          = var.project_name
   environment           = var.environment
   function_name         = "start-ec2-instances"
-  source_file_path      = "${path.root}/infra/python/start/start_ec2_instances.py"
+  source_file_path      = "${path.module}/../infra/python/start/start_ec2_instances.py"
   handler               = "start_ec2_instances.lambda_handler"
   runtime               = var.lambda_runtime
   timeout               = var.lambda_timeout
@@ -78,7 +78,7 @@ module "lambda_stop" {
   project_name          = var.project_name
   environment           = var.environment
   function_name         = "stop-ec2-instances"
-  source_file_path      = "${path.root}/infra/python/stop/stop_ec2_instances.py"
+  source_file_path      = "${path.module}/../infra/python/stop/stop_ec2_instances.py"
   handler               = "stop_ec2_instances.lambda_handler"
   runtime               = var.lambda_runtime
   timeout               = var.lambda_timeout
