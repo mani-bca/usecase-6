@@ -3,9 +3,9 @@ project_name   = "ec2-scheduler"
 environment    = "dev"
 
 # EC2 Configuration
-instance_type  = "t3.micro"
-instance_count = 2
-subnet_ids     = ["subnet-12345678", "subnet-87654321"]
+instance_type  = "t2.micro"
+instance_count = 1
+subnet_ids     = ["subnet-12345678"]
 vpc_security_group_ids = ["sg-12345678"]
 key_name       = "my-key-pair"
 ami_id         = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2 AMI (replace with appropriate AMI)

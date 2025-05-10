@@ -1,5 +1,7 @@
+# main.tf
+
 module "iam" {
-  source = "./modules/iam"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/iam?ref=main"
 
   project_name = var.project_name
   environment  = var.environment
@@ -7,7 +9,7 @@ module "iam" {
 }
 
 module "ec2" {
-  source = "./modules/ec2"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/ec2?ref=main"
 
   project_name         = var.project_name
   environment          = var.environment
@@ -22,7 +24,7 @@ module "ec2" {
 
 # Define CloudWatch Event Rules
 module "cloudwatch" {
-  source = "./modules/cloudwatch"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/cloudwatch?ref=main"
 
   project_name           = var.project_name
   environment            = var.environment
@@ -44,7 +46,7 @@ module "lambda_start" {
   project_name          = var.project_name
   environment           = var.environment
   function_name         = "start-ec2-instances"
-  lambda_zip_path       = "${path.module}/python/start_ec2_instances.zip"
+  source_file_path      = "${path.root}/infra/python/start/start_ec2_instances.py"
   handler               = "start_ec2_instances.lambda_handler"
   runtime               = var.lambda_runtime
   timeout               = var.lambda_timeout
@@ -64,7 +66,7 @@ module "lambda_stop" {
   project_name          = var.project_name
   environment           = var.environment
   function_name         = "stop-ec2-instances"
-  lambda_zip_path       = "${path.module}/python/stop_ec2_instances.zip"
+  source_file_path      = "${path.root}/infra/python/stop/stop_ec2_instances.py"
   handler               = "stop_ec2_instances.lambda_handler"
   runtime               = var.lambda_runtime
   timeout               = var.lambda_timeout
