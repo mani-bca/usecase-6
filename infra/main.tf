@@ -1,7 +1,7 @@
 # main.tf
 
 module "iam" {
-  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/iam?ref=main"
+  source = "./modules/iam"
 
   project_name = var.project_name
   environment  = var.environment
@@ -9,7 +9,7 @@ module "iam" {
 }
 
 module "ec2" {
-  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/ec2?ref=main"
+  source = "./modules/ec2"
 
   project_name         = var.project_name
   environment          = var.environment
@@ -22,26 +22,38 @@ module "ec2" {
   tags                 = var.tags
 }
 
-# Define CloudWatch Event Rules
-module "cloudwatch" {
-  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/cloudwatch?ref=main"
+# First create CloudWatch Event Rules
+module "cloudwatch_event_start" {
+  source = "./modules/cloudwatch_event"
 
-  project_name           = var.project_name
-  environment            = var.environment
-  start_cron_expression  = var.start_cron_expression
-  stop_cron_expression   = var.stop_cron_expression
-  start_lambda_function_name = module.lambda_start.lambda_function_name
-  stop_lambda_function_name  = module.lambda_stop.lambda_function_name
-  start_lambda_function_arn  = module.lambda_start.lambda_function_arn
-  stop_lambda_function_arn   = module.lambda_stop.lambda_function_arn
-  tags                   = var.tags
-
-  depends_on = [module.lambda_start, module.lambda_stop]
+  project_name    = var.project_name
+  environment     = var.environment
+  rule_name       = "start-ec2-instances"
+  description     = "Triggers Lambda function to start EC2 instances at specified time"
+  cron_expression = var.start_cron_expression
+  target_id       = "start-ec2-instances-target"
+  tags            = var.tags
+  # Initially set to null, will be updated after Lambda creation
+  lambda_function_arn = null
 }
 
-# Create Lambda functions with CloudWatch Event Rule ARNs
+module "cloudwatch_event_stop" {
+  source = "./modules/cloudwatch_event"
+
+  project_name    = var.project_name
+  environment     = var.environment
+  rule_name       = "stop-ec2-instances"
+  description     = "Triggers Lambda function to stop EC2 instances at specified time"
+  cron_expression = var.stop_cron_expression
+  target_id       = "stop-ec2-instances-target"
+  tags            = var.tags
+  # Initially set to null, will be updated after Lambda creation
+  lambda_function_arn = null
+}
+
+# Then create Lambda functions with CloudWatch Event Rule ARNs
 module "lambda_start" {
-  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/lambda?ref=main"
+  source = "./modules/lambda"
 
   project_name          = var.project_name
   environment           = var.environment
@@ -53,15 +65,17 @@ module "lambda_start" {
   memory_size           = var.lambda_memory_size
   description           = "Lambda function to start EC2 instances during working hours"
   lambda_role_arn       = module.iam.lambda_role_arn
-  cloudwatch_event_rule_arn = module.cloudwatch.start_cloudwatch_event_rule_arn
+  cloudwatch_event_rule_arn = module.cloudwatch_event_start.cloudwatch_event_rule_arn
   environment_variables = {
     EC2_INSTANCE_IDS = join(",", module.ec2.instance_ids)
   }
   tags                  = var.tags
+  
+  depends_on = [module.cloudwatch_event_start]
 }
 
 module "lambda_stop" {
-  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/lambda?ref=main"
+  source = "./modules/lambda"
 
   project_name          = var.project_name
   environment           = var.environment
@@ -73,9 +87,34 @@ module "lambda_stop" {
   memory_size           = var.lambda_memory_size
   description           = "Lambda function to stop EC2 instances outside working hours"
   lambda_role_arn       = module.iam.lambda_role_arn
-  cloudwatch_event_rule_arn = module.cloudwatch.stop_cloudwatch_event_rule_arn
+  cloudwatch_event_rule_arn = module.cloudwatch_event_stop.cloudwatch_event_rule_arn
   environment_variables = {
     EC2_INSTANCE_IDS = join(",", module.ec2.instance_ids)
   }
   tags                  = var.tags
+  
+  depends_on = [module.cloudwatch_event_stop]
+}
+
+# Finally, update CloudWatch Event targets to point to Lambda functions
+resource "aws_cloudwatch_event_target" "start_ec2_instances" {
+  rule      = module.cloudwatch_event_start.cloudwatch_event_rule_name
+  target_id = "start-ec2-instances-target"
+  arn       = module.lambda_start.lambda_function_arn
+  
+  depends_on = [
+    module.cloudwatch_event_start,
+    module.lambda_start
+  ]
+}
+
+resource "aws_cloudwatch_event_target" "stop_ec2_instances" {
+  rule      = module.cloudwatch_event_stop.cloudwatch_event_rule_name
+  target_id = "stop-ec2-instances-target"
+  arn       = module.lambda_stop.lambda_function_arn
+  
+  depends_on = [
+    module.cloudwatch_event_stop,
+    module.lambda_stop
+  ]
 }
