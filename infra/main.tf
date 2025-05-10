@@ -1,7 +1,7 @@
 # main.tf
 
 module "iam" {
-  source = "./modules/iam"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/iam?ref=main"
 
   project_name = var.project_name
   environment  = var.environment
@@ -9,7 +9,7 @@ module "iam" {
 }
 
 module "ec2" {
-  source = "./modules/ec2"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/ec2?ref=main"
 
   project_name         = var.project_name
   environment          = var.environment
@@ -24,7 +24,7 @@ module "ec2" {
 
 # First create CloudWatch Event Rules
 module "cloudwatch_event_start" {
-  source = "./modules/cloudwatch_event"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/cloudwatch?ref=main"
 
   project_name    = var.project_name
   environment     = var.environment
@@ -38,7 +38,7 @@ module "cloudwatch_event_start" {
 }
 
 module "cloudwatch_event_stop" {
-  source = "./modules/cloudwatch_event"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/cloudwatch?ref=main"
 
   project_name    = var.project_name
   environment     = var.environment
@@ -53,7 +53,7 @@ module "cloudwatch_event_stop" {
 
 # Then create Lambda functions with CloudWatch Event Rule ARNs
 module "lambda_start" {
-  source = "./modules/lambda"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/lambda?ref=main"
 
   project_name          = var.project_name
   environment           = var.environment
@@ -75,7 +75,7 @@ module "lambda_start" {
 }
 
 module "lambda_stop" {
-  source = "./modules/lambda"
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule/lambda?ref=main"
 
   project_name          = var.project_name
   environment           = var.environment
