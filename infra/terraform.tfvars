@@ -1,46 +1,27 @@
-aws_region = "us-east-1" 
-name_prefix = "ec2-scheduler"
+aws_region     = "us-east-1"
+project_name   = "ec2-scheduler"
+environment    = "dev"
 
-# Tags to add to all resources
-tags = {
-  Environment = "Production"
-  Project     = "EC2 Cost Optimization"
-  Terraform   = "true"
-  Owner       = "Operations"
-}
+# EC2 Configuration
+instance_type  = "t3.micro"
+instance_count = 2
+subnet_ids     = ["subnet-12345678", "subnet-87654321"]
+vpc_security_group_ids = ["sg-12345678"]
+key_name       = "my-key-pair"
+ami_id         = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2 AMI (replace with appropriate AMI)
 
-# EventBridge Scheduler settings
-schedule_group_name = "ec2-scheduler-group"
-start_schedule_expression = "cron(0 8 ? * MON-FRI *)"  # 8:00 AM Monday-Friday
-stop_schedule_expression = "cron(0 17 ? * MON-FRI *)"  # 5:00 PM Monday-Friday
-
-# Lambda function settings
-lambda_runtime = "python3.9"
-lambda_timeout = 30
+# Lambda Configuration
+lambda_runtime     = "python3.9"
+lambda_timeout     = 30
 lambda_memory_size = 128
 
-# VPC configuration (optional) - leave empty arrays for no VPC deployment
-lambda_subnet_ids = []
-lambda_security_group_ids = []
+# CloudWatch Event Configuration
+start_cron_expression = "cron(0 8 ? * MON-FRI *)"  # 8:00 AM UTC Monday-Friday
+stop_cron_expression  = "cron(0 17 ? * MON-FRI *)" # 5:00 PM UTC Monday-Friday
 
-# Lambda environment variables
-common_environment_variables = {
-  LOG_LEVEL = "INFO"
+# Tags
+tags = {
+  Project     = "EC2 Instance Scheduler"
+  Owner       = "DevOps Team"
+  Environment = "dev"
 }
-
-start_lambda_environment_variables = {
-  TAG_KEY = "AutoStart"
-  TAG_VALUE = "true"
-}
-
-stop_lambda_environment_variables = {
-  TAG_KEY = "AutoStop"
-  TAG_VALUE = "true"
-}
-
-# Optional additional IAM policies
-start_lambda_additional_policies = []
-stop_lambda_additional_policies = []
-
-# CloudWatch Logs retention period in days
-log_retention_in_days = 14
