@@ -5,10 +5,10 @@ environment    = "dev"
 # EC2 Configuration
 instance_type  = "t2.micro"
 instance_count = 1
-subnet_ids     = ["subnet-12345678"]
-vpc_security_group_ids = ["sg-12345678"]
-key_name       = "my-key-pair"
-ami_id         = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2 AMI (replace with appropriate AMI)
+subnet_ids     = ["subnet-0aade558b97319d86"]
+vpc_security_group_ids = ["sg-09a1e6e668e0e62df"]
+key_name       = "devops"
+ami_id         = "ami-084568db4383264d4"  # Amazon Linux 2 AMI (replace with appropriate AMI)
 
 # Lambda Configuration
 lambda_runtime     = "python3.9"
