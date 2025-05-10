@@ -44,4 +44,33 @@ def lambda_handler(event, context):
     for reservation in describe_response['Reservations']:
         for instance in reservation['Instances']:
             instance_id = instance['InstanceId']
-            instance_state = instance['State
+            instance_state = instance['State']['Name']
+            
+            if instance_state == 'running':
+                instances_to_stop.append(instance_id)
+                logger.info(f"Instance {instance_id} is running and will be stopped.")
+            else:
+                logger.info(f"Instance {instance_id} is in {instance_state} state. No action needed.")
+    
+    if not instances_to_stop:
+        logger.info("No running instances found. Nothing to stop.")
+        return {
+            'statusCode': 200,
+            'body': 'No running instances found. Nothing to stop.'
+        }
+    
+    # Stop the running instances
+    response = ec2_client.stop_instances(InstanceIds=instances_to_stop)
+    
+    # Log the result
+    stopping_instances = response['StoppingInstances']
+    for instance in stopping_instances:
+        instance_id = instance['InstanceId']
+        previous_state = instance['PreviousState']['Name']
+        current_state = instance['CurrentState']['Name']
+        logger.info(f"Instance {instance_id} state changing from {previous_state} to {current_state}")
+    
+    return {
+        'statusCode': 200,
+        'body': f'Successfully initiated stop for {len(stopping_instances)} instances.'
+    }
