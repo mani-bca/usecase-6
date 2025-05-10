@@ -2,8 +2,6 @@
 
 module "iam" {
   source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/iam?ref=main"
-
-  project_name = var.project_name
   environment  = var.environment
   tags         = var.tags
 }
@@ -51,7 +49,7 @@ module "cloudwatch_event_stop" {
   lambda_function_arn = null
 }
 
-# Then create Lambda functions with CloudWatch Event Rule ARNs
+# Then create Lambda functions
 module "lambda_start" {
   source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/lambda?ref=main"
 
@@ -65,7 +63,6 @@ module "lambda_start" {
   memory_size           = var.lambda_memory_size
   description           = "Lambda function to start EC2 instances during working hours"
   lambda_role_arn       = module.iam.lambda_role_arn
-  cloudwatch_event_rule_arn = module.cloudwatch_event_start.cloudwatch_event_rule_arn
   environment_variables = {
     EC2_INSTANCE_IDS = join(",", module.ec2.instance_ids)
   }
@@ -87,7 +84,6 @@ module "lambda_stop" {
   memory_size           = var.lambda_memory_size
   description           = "Lambda function to stop EC2 instances outside working hours"
   lambda_role_arn       = module.iam.lambda_role_arn
-  cloudwatch_event_rule_arn = module.cloudwatch_event_stop.cloudwatch_event_rule_arn
   environment_variables = {
     EC2_INSTANCE_IDS = join(",", module.ec2.instance_ids)
   }
@@ -96,11 +92,15 @@ module "lambda_stop" {
   depends_on = [module.cloudwatch_event_stop]
 }
 
-# Finally, update CloudWatch Event targets to point to Lambda functions
-resource "aws_cloudwatch_event_target" "start_ec2_instances" {
-  rule      = module.cloudwatch_event_start.cloudwatch_event_rule_name
-  target_id = "start-ec2-instances-target"
-  arn       = module.lambda_start.lambda_function_arn
+# Finally, connect CloudWatch Events to Lambda functions
+module "connector_start" {
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/event_lambda?ref=main"
+  
+  cloudwatch_event_rule_arn  = module.cloudwatch_event_start.cloudwatch_event_rule_arn
+  cloudwatch_event_rule_name = module.cloudwatch_event_start.cloudwatch_event_rule_name
+  lambda_function_name       = module.lambda_start.lambda_function_name
+  lambda_function_arn        = module.lambda_start.lambda_function_arn
+  target_id                  = "start-ec2-instances-target"
   
   depends_on = [
     module.cloudwatch_event_start,
@@ -108,10 +108,14 @@ resource "aws_cloudwatch_event_target" "start_ec2_instances" {
   ]
 }
 
-resource "aws_cloudwatch_event_target" "stop_ec2_instances" {
-  rule      = module.cloudwatch_event_stop.cloudwatch_event_rule_name
-  target_id = "stop-ec2-instances-target"
-  arn       = module.lambda_stop.lambda_function_arn
+module "connector_stop" {
+  source = "git::https://github.com/mani-bca/set-aws-infra.git//modules/schedule2/event_lambda?ref=main"
+  
+  cloudwatch_event_rule_arn  = module.cloudwatch_event_stop.cloudwatch_event_rule_arn
+  cloudwatch_event_rule_name = module.cloudwatch_event_stop.cloudwatch_event_rule_name
+  lambda_function_name       = module.lambda_stop.lambda_function_name
+  lambda_function_arn        = module.lambda_stop.lambda_function_arn
+  target_id                  = "stop-ec2-instances-target"
   
   depends_on = [
     module.cloudwatch_event_stop,
