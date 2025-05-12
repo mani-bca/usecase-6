@@ -16,10 +16,9 @@ lambda_timeout     = 30
 lambda_memory_size = 128
 
 # CloudWatch Event Configuration
-start_cron_expression = "cron(0/10 * ? * * *)" # 8:00 AM UTC Monday-Friday
-stop_cron_expression  = "cron(0 17 ? * MON-FRI *)" # 5:00 PM UTC Monday-Friday
+start_cron_expression = "cron(0/10 * ? * * *)" 
+stop_cron_expression  = "cron(0 17 ? * MON-FRI *)"
 
-# Tags
 tags = {
   Project     = "EC2 Instance Scheduler"
   Owner       = "DevOps Team"
